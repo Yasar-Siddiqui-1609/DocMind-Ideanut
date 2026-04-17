@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0f0c29" />
+  <meta name="description" content="DocMind AI – Upload documents and chat with them using RAG-powered AI. Get instant summaries, glossaries, and accurate Q&A grounded in your content." />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>DocMind AI – RAG Document Assistant</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Splash Screen -->
+    <div id="splash-screen">
+      <div class="splash-content">
+        <div class="splash-logo">
+          <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+            <rect width="64" height="64" rx="16" fill="url(#grad1)"/>
+            <path d="M16 20h32M16 28h24M16 36h28M16 44h20" stroke="white" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="46" cy="40" r="10" fill="url(#grad2)" stroke="white" stroke-width="2"/>
+            <path d="M43 40l2 2 4-4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <defs>
+              <linearGradient id="grad1" x1="0" y1="0" x2="64" y2="64">
+                <stop offset="0%" stop-color="#667eea"/>
+                <stop offset="100%" stop-color="#764ba2"/>
+              </linearGradient>
+              <linearGradient id="grad2" x1="0" y1="0" x2="20" y2="20">
+                <stop offset="0%" stop-color="#f093fb"/>
+                <stop offset="100%" stop-color="#f5576c"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <h1 class="splash-title">DocMind AI</h1>
+        <p class="splash-subtitle">RAG-Powered Document Intelligence</p>
+        <div class="splash-loader">
+          <div class="loader-bar"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- API key is hardcoded in app.js -->
+
+    <!-- Main App Shell -->
+    <div id="main-app" class="hidden">
+      <!-- Top Navigation Bar -->
+      <nav class="top-nav">
+        <button class="nav-menu-btn" id="menu-toggle" onclick="toggleSidebar()">
+          <span></span><span></span><span></span>
+        </button>
+        <div class="nav-brand">
+          <svg width="28" height="28" viewBox="0 0 64 64" fill="none">
+            <rect width="64" height="64" rx="12" fill="url(#navGrad)"/>
+            <path d="M16 20h32M16 28h24M16 36h28M16 44h20" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+            <circle cx="46" cy="40" r="10" fill="url(#navGrad2)"/>
+            <path d="M43 40l2 2 4-4" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <defs>
+              <linearGradient id="navGrad" x1="0" y1="0" x2="64" y2="64">
+                <stop offset="0%" stop-color="#667eea"/><stop offset="100%" stop-color="#764ba2"/>
+              </linearGradient>
+              <linearGradient id="navGrad2" x1="0" y1="0" x2="20" y2="20">
+                <stop offset="0%" stop-color="#f093fb"/><stop offset="100%" stop-color="#f5576c"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <span>DocMind <span class="brand-ai">AI</span></span>
+        </div>
+        <div class="nav-actions">
+          <div id="active-doc-badge" class="active-doc-badge hidden">
+            <span class="badge-dot"></span>
+            <span id="active-doc-name">No document</span>
+          </div>
+          <button class="btn-icon" id="settings-btn" onclick="showApiModal()" title="Settings">⚙️</button>
+        </div>
+      </nav>
+
+      <!-- Sidebar Overlay -->
+      <div id="sidebar-overlay" class="sidebar-overlay hidden" onclick="toggleSidebar()"></div>
+
+      <!-- Sidebar -->
+      <aside id="sidebar" class="sidebar">
+        <div class="sidebar-header">
+          <h3>Knowledge Base</h3>
+          <button class="btn-close-sidebar" onclick="toggleSidebar()">✕</button>
+        </div>
+        <div class="sidebar-upload">
+          <label class="upload-btn" for="file-input">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+            Upload Document
+          </label>
+          <input type="file" id="file-input" accept=".pdf,.docx,.txt" style="display:none" onchange="handleFileUpload(event)" />
+          <p class="upload-hint">PDF · DOCX · TXT</p>
+        </div>
+        <div class="sidebar-docs" id="sidebar-docs">
+          <p class="no-docs-msg" id="no-docs-msg">No documents yet.<br>Upload your first file!</p>
+        </div>
+      </aside>
+
+      <!-- Content Area -->
+      <main class="content-area">
+        <!-- Welcome Screen -->
+        <div id="screen-welcome" class="screen active">
+          <div class="welcome-container">
+            <div class="welcome-hero">
+              <div class="hero-graphic">
+                <div class="floating-card card-1">📄 TL;DR</div>
+                <div class="floating-card card-2">🔑 Key Terms</div>
+                <div class="floating-card card-3">💡 Insights</div>
+                <div class="hero-center-icon">🧠</div>
+              </div>
+              <h1 class="welcome-title">Chat with Your Documents</h1>
+              <p class="welcome-desc">Upload any PDF, DOCX, or TXT file and instantly get AI-powered summaries, glossaries, and conversational Q&A — all grounded in your content.</p>
+            </div>
+            <div class="feature-grid">
+              <div class="feature-card">
+                <div class="feature-icon">📋</div>
+                <h4>Smart Summaries</h4>
+                <p>TL;DR, key concepts & actionable insights generated instantly</p>
+              </div>
+              <div class="feature-card">
+                <div class="feature-icon">💬</div>
+                <h4>RAG-Based Q&A</h4>
+                <p>Ask anything — answers are grounded in your document only</p>
+              </div>
+              <div class="feature-card">
+                <div class="feature-icon">🚫</div>
+                <h4>Hallucination-Free</h4>
+                <p>Out-of-scope questions are detected and flagged automatically</p>
+              </div>
+              <div class="feature-card">
+                <div class="feature-icon">📤</div>
+                <h4>Export as PDF</h4>
+                <p>Share your structured summary as a beautifully formatted PDF</p>
+              </div>
+            </div>
+            <label class="cta-upload-btn" for="file-input-main">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+              Upload Your First Document
+            </label>
+            <input type="file" id="file-input-main" accept=".pdf,.docx,.txt" style="display:none" onchange="handleFileUpload(event)" />
+          </div>
+        </div>
+
+        <!-- Processing Screen -->
+        <div id="screen-processing" class="screen hidden">
+          <div class="processing-container">
+            <div class="processing-animation">
+              <div class="processing-rings">
+                <div class="ring ring-1"></div>
+                <div class="ring ring-2"></div>
+                <div class="ring ring-3"></div>
+              </div>
+              <div class="processing-icon">🧠</div>
+            </div>
+            <h2 id="processing-title">Processing Document...</h2>
+            <p id="processing-subtitle">Extracting text and building knowledge base</p>
+            <div class="progress-bar-container">
+              <div class="progress-bar" id="progress-bar"></div>
+            </div>
+            <div class="processing-steps" id="processing-steps">
+              <div class="step active" id="step-1">📂 Reading file...</div>
+              <div class="step" id="step-2">✂️ Chunking content...</div>
+              <div class="step" id="step-3">🔢 Computing embeddings...</div>
+              <div class="step" id="step-4">🧪 Generating summary...</div>
+              <div class="step" id="step-5">✅ Ready!</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Summary Screen -->
+        <div id="screen-summary" class="screen hidden">
+          <div class="summary-container">
+            <div class="summary-header">
+              <div class="summary-doc-info">
+                <div class="doc-type-badge" id="summary-doc-type">PDF</div>
+                <div>
+                  <h2 id="summary-doc-title">Document Title</h2>
+                  <p id="summary-doc-meta">0 pages · 0 words</p>
+                </div>
+              </div>
+              <div class="summary-actions">
+                <button class="btn-secondary" onclick="showScreen('screen-viewer')">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  View Doc
+                </button>
+                <button class="btn-primary" onclick="exportSummaryPDF()" id="export-btn">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                  Export PDF
+                </button>
+              </div>
+            </div>
+
+            <div class="summary-cards">
+              <!-- TL;DR Card -->
+              <div class="summary-card tldr-card">
+                <div class="card-label">
+                  <span class="label-icon">⚡</span> TL;DR
+                </div>
+                <p id="summary-tldr">Loading...</p>
+              </div>
+
+              <!-- Key Concepts -->
+              <div class="summary-card">
+                <div class="card-label">
+                  <span class="label-icon">💡</span> Key Concepts
+                </div>
+                <div id="summary-concepts" class="concepts-list"></div>
+              </div>
+
+              <!-- Glossary -->
+              <div class="summary-card">
+                <div class="card-label">
+                  <span class="label-icon">📖</span> Terminology Glossary
+                </div>
+                <div id="summary-glossary" class="glossary-list"></div>
+              </div>
+
+              <!-- Actionable Insights -->
+              <div class="summary-card">
+                <div class="card-label">
+                  <span class="label-icon">🎯</span> Actionable Insights
+                </div>
+                <ul id="summary-insights" class="insights-list"></ul>
+              </div>
+            </div>
+
+            <div class="chat-cta">
+              <p>Ready to explore deeper?</p>
+              <button class="btn-primary btn-large" onclick="showScreen('screen-chat')">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                Start Chatting
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chat Screen -->
+        <div id="screen-chat" class="screen hidden">
+          <div class="chat-container">
+            <div class="chat-header">
+              <div class="chat-doc-info">
+                <div class="chat-doc-icon">📄</div>
+                <div>
+                  <h3 id="chat-doc-name">Document Name</h3>
+                  <p id="chat-chunk-count">0 chunks indexed</p>
+                </div>
+              </div>
+              <button class="btn-secondary btn-sm" onclick="showScreen('screen-summary')">Summary</button>
+            </div>
+
+            <div class="chat-messages" id="chat-messages">
+              <div class="chat-welcome-msg">
+                <div class="ai-avatar">🧠</div>
+                <div class="msg-bubble ai-bubble">
+                  <p>Hello! I've analyzed your document and I'm ready to answer questions about it.</p>
+                  <p>Try asking:</p>
+                  <div class="suggestion-chips">
+                    <button class="chip" onclick="sendSuggestedQuery('What are the key terms and their definitions?')">Key terms?</button>
+                    <button class="chip" onclick="sendSuggestedQuery('What is the main topic of this document?')">Main topic?</button>
+                    <button class="chip" onclick="sendSuggestedQuery('What are the actionable insights?')">Insights?</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="chat-input-area">
+              <div class="chat-input-wrapper">
+                <textarea id="chat-input" placeholder="Ask anything about your document..." rows="1" onkeydown="handleChatKeydown(event)" oninput="autoResizeTextarea(this)"></textarea>
+                <button class="send-btn" id="send-btn" onclick="sendChatMessage()">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                </button>
+              </div>
+              <p class="chat-disclaimer">Answers grounded in uploaded document only · RAG-powered</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Document Viewer Screen -->
+        <div id="screen-viewer" class="screen hidden">
+          <div class="viewer-container">
+            <div class="viewer-header">
+              <button class="btn-back" onclick="showScreen('screen-summary')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                Back
+              </button>
+              <h3 id="viewer-doc-title">Document Viewer</h3>
+              <div class="viewer-actions">
+                <button class="btn-icon" onclick="toggleHighlights()" title="Toggle Highlights" id="highlight-toggle">✨</button>
+              </div>
+            </div>
+            <div class="viewer-legend">
+              <span class="legend-item"><span class="legend-dot yellow"></span> Key Terms</span>
+              <span class="legend-item"><span class="legend-dot purple"></span> Key Concepts</span>
+              <span class="legend-item"><span class="legend-dot green"></span> Insights</span>
+            </div>
+            <div class="viewer-content" id="viewer-content">
+              <p>Loading document content...</p>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- Bottom Navigation (Mobile) -->
+      <nav class="bottom-nav" id="bottom-nav">
+        <button class="bottom-nav-item active" id="nav-home" onclick="navTo('welcome')">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <span>Home</span>
+        </button>
+        <button class="bottom-nav-item" id="nav-summary" onclick="navTo('summary')" disabled>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          <span>Summary</span>
+        </button>
+        <button class="bottom-nav-item" id="nav-chat" onclick="navTo('chat')" disabled>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          <span>Chat</span>
+        </button>
+        <button class="bottom-nav-item" id="nav-viewer" onclick="navTo('viewer')" disabled>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <span>View</span>
+        </button>
+      </nav>
+    </div>
+  </div>
+
+  <!-- PDF.js for PDF parsing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.mjs" type="module"></script>
+  <!-- mammoth.js for DOCX parsing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
